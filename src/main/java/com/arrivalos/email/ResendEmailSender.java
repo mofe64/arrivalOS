@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientResponseException;
 
 @Component
 @ConditionalOnProperty(name = "arrivalos.email.provider", havingValue = "resend")
@@ -41,6 +42,13 @@ public class ResendEmailSender implements EmailSender {
                             "text", message.textBody()))
                     .retrieve()
                     .toBodilessEntity();
+        } catch (RestClientResponseException exception) {
+            throw new EmailDeliveryException(
+                    "Resend email delivery failed with status "
+                            + exception.getStatusCode()
+                            + ": "
+                            + exception.getResponseBodyAsString(),
+                    exception);
         } catch (RuntimeException exception) {
             throw new EmailDeliveryException("Resend email delivery failed", exception);
         }

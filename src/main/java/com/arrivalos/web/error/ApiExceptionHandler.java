@@ -6,6 +6,8 @@ import java.util.Locale;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -17,6 +19,8 @@ import jakarta.servlet.http.HttpServletRequest;
 
 @RestControllerAdvice
 public class ApiExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(ApiExceptionHandler.class);
 
     @ExceptionHandler(ApiException.class)
     ResponseEntity<ApiErrorResponse> handleApiException(
@@ -85,13 +89,20 @@ public class ApiExceptionHandler {
     ResponseEntity<ApiErrorResponse> handleEmailDelivery(
             EmailDeliveryException exception,
             HttpServletRequest request) {
+        String requestId = requestId(request);
+        log.error(
+                "Email delivery failed for path={} requestId={}: {}",
+                request.getRequestURI(),
+                requestId,
+                exception.getMessage(),
+                exception);
         return ResponseEntity.status(502)
                 .body(ApiErrorResponse.of(
                         502,
                         "EMAIL_DELIVERY_FAILED",
                         "Email delivery failed",
                         request.getRequestURI(),
-                        requestId(request)));
+                        requestId));
     }
 
     private String codeFor(String message) {
