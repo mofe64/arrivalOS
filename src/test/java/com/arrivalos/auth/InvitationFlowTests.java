@@ -93,6 +93,7 @@ class InvitationFlowTests {
                 .andExpect(jsonPath("$.email").value("ops-two@example.com"))
                 .andExpect(jsonPath("$.accountType").value("ADMIN"))
                 .andExpect(jsonPath("$.accepted").value(false));
+        assertLatestInviteEmailUsesBrandedTemplate();
         String adminInviteToken = latestTokenFromEmail("Accept your ArrivalOS invite");
 
         mockMvc.perform(post("/api/auth/login")
@@ -301,6 +302,19 @@ class InvitationFlowTests {
             throw new AssertionError("Expected token query parameter in email body");
         }
         return URLDecoder.decode(matcher.group(1), StandardCharsets.UTF_8);
+    }
+
+    private void assertLatestInviteEmailUsesBrandedTemplate() {
+        String html = recordingEmailSender.latestWithSubject("Accept your ArrivalOS invite")
+                .orElseThrow(() -> new AssertionError("Expected invitation email"))
+                .htmlBody();
+        assertThat(html)
+                .contains("<!doctype html>")
+                .contains("Verified access to live arrival operations")
+                .contains("Accept invitation")
+                .contains("/accept-invite?token=")
+                .contains("Gbaja ArrivalOS")
+                .doesNotContain("<body>\n<p>Hello");
     }
 
     private String acceptInviteJson(String token, String password) throws Exception {
