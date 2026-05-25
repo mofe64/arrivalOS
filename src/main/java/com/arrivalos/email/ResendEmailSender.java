@@ -15,10 +15,8 @@ public class ResendEmailSender implements EmailSender {
     private final RestClient restClient;
     private final String apiKey;
 
-    public ResendEmailSender(
-            RestClient.Builder restClientBuilder,
-            @Value("${arrivalos.email.resend-api-key}") String apiKey) {
-        this.restClient = restClientBuilder
+    public ResendEmailSender(@Value("${arrivalos.email.resend-api-key}") String apiKey) {
+        this.restClient = RestClient.builder()
                 .baseUrl("https://api.resend.com")
                 .build();
         this.apiKey = apiKey;
