@@ -425,6 +425,15 @@ class ArrivalOsMvpApiTests {
         assertThat(notificationAttemptRepository.findByTripOrderByCreatedAtAsc(trip))
                 .extracting(attempt -> attempt.getStatus())
                 .containsExactly(NotificationStatus.SENT, NotificationStatus.SENT);
+        String updateHtml = recordingEmailSender.latestWithSubject("ArrivalOS concierge in position")
+                .orElseThrow()
+                .htmlBody();
+        assertThat(updateHtml)
+                .contains("<!doctype html>")
+                .contains("Verified arrival timeline update")
+                .contains("KQ532")
+                .contains("Concierge in position")
+                .doesNotStartWith("<p>");
 
         recordingEmailSender.failNext(new RuntimeException("smtp unavailable"));
         mockMvc.perform(post("/api/admin/trips/{tripId}/timeline-events", trip.getId())

@@ -3,11 +3,14 @@ package com.arrivalos.trip;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.blankOrNullString;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.time.Instant;
+import java.util.UUID;
+import java.util.stream.StreamSupport;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -152,6 +155,38 @@ class ConciergeCapabilityFlowTests {
         assertThat(timelineEventRepository.findByTripOrderByOccurredAtAsc(savedTrip))
                 .extracting(TimelineEvent::getEventType)
                 .containsExactly(TimelineEventType.CONCIERGE_IN_POSITION);
+    }
+
+    @Test
+    void adminCanListConcierges() throws Exception {
+        String adminToken = registerAndLogin("List Concierge Admin", "list-concierge-admin@example.com", AccountType.ADMIN);
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        Concierge activeConcierge = conciergeRepository.save(new Concierge(
+                "Amina Yusuf",
+                "+2347000000400",
+                "GBJ-LIST-ACTIVE-" + suffix));
+        Concierge inactiveConcierge = conciergeRepository.save(new Concierge(
+                "Bode Musa",
+                "+2347000000401",
+                "GBJ-LIST-INACTIVE-" + suffix));
+        inactiveConcierge.setActive(false);
+        conciergeRepository.save(inactiveConcierge);
+
+        MvcResult result = mockMvc.perform(get("/api/admin/concierges")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        JsonNode body = objectMapper.readTree(result.getResponse().getContentAsString());
+        JsonNode activeResult = findConciergeByPublicId(body, "GBJ-LIST-ACTIVE-" + suffix);
+        assertThat(activeResult.get("id").asString()).isEqualTo(activeConcierge.getId().toString());
+        assertThat(activeResult.get("fullName").asString()).isEqualTo("Amina Yusuf");
+        assertThat(activeResult.get("active").asBoolean()).isTrue();
+
+        JsonNode inactiveResult = findConciergeByPublicId(body, "GBJ-LIST-INACTIVE-" + suffix);
+        assertThat(inactiveResult.get("id").asString()).isEqualTo(inactiveConcierge.getId().toString());
+        assertThat(inactiveResult.get("fullName").asString()).isEqualTo("Bode Musa");
+        assertThat(inactiveResult.get("active").asBoolean()).isFalse();
     }
 
     @Test
@@ -377,5 +412,12 @@ class ConciergeCapabilityFlowTests {
 
         JsonNode body = objectMapper.readTree(login.getResponse().getContentAsString());
         return body.get("accessToken").asString();
+    }
+
+    private JsonNode findConciergeByPublicId(JsonNode body, String publicId) {
+        return StreamSupport.stream(body.spliterator(), false)
+                .filter(concierge -> publicId.equals(concierge.get("publicId").asString()))
+                .findFirst()
+                .orElseThrow();
     }
 }

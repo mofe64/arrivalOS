@@ -3,6 +3,7 @@ package com.arrivalos.notification;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,7 @@ import com.arrivalos.domain.repository.TripPrincipalRepository;
 import com.arrivalos.domain.repository.WatcherRepository;
 import com.arrivalos.email.EmailMessage;
 import com.arrivalos.email.EmailSender;
+import com.arrivalos.email.EmailTemplateRenderer;
 import com.arrivalos.trip.TripTransitionResult;
 
 @Service
@@ -31,21 +33,27 @@ public class EmailTripNotificationService implements NotificationService {
     private static final String PROVIDER = "EMAIL";
 
     private final EmailSender emailSender;
+    private final EmailTemplateRenderer templateRenderer;
     private final NotificationAttemptRepository notificationAttemptRepository;
     private final TripPrincipalRepository tripPrincipalRepository;
     private final WatcherRepository watcherRepository;
+    private final String appBaseUrl;
     private final String fromAddress;
 
     public EmailTripNotificationService(
             EmailSender emailSender,
+            EmailTemplateRenderer templateRenderer,
             NotificationAttemptRepository notificationAttemptRepository,
             TripPrincipalRepository tripPrincipalRepository,
             WatcherRepository watcherRepository,
+            @Value("${arrivalos.app.base-url}") String appBaseUrl,
             @Value("${arrivalos.email.from}") String fromAddress) {
         this.emailSender = emailSender;
+        this.templateRenderer = templateRenderer;
         this.notificationAttemptRepository = notificationAttemptRepository;
         this.tripPrincipalRepository = tripPrincipalRepository;
         this.watcherRepository = watcherRepository;
+        this.appBaseUrl = stripTrailingSlash(appBaseUrl);
         this.fromAddress = fromAddress;
     }
 
@@ -57,7 +65,10 @@ public class EmailTripNotificationService implements NotificationService {
                     trip,
                     watcher,
                     "ArrivalOS trip created",
-                    "You have been added as a watcher for " + trip.getFlightNumber() + ".");
+                    "Trip watcher added",
+                    "You have been added as a watcher for " + trip.getFlightNumber() + ".",
+                    null,
+                    null);
         }
     }
 
@@ -68,7 +79,10 @@ public class EmailTripNotificationService implements NotificationService {
                 trip,
                 watcher,
                 "ArrivalOS watcher access added",
-                "You have been added as a watcher for " + trip.getFlightNumber() + ".");
+                "Watcher access added",
+                "You have been added as a watcher for " + trip.getFlightNumber() + ".",
+                null,
+                null);
     }
 
     @Override
@@ -82,12 +96,26 @@ public class EmailTripNotificationService implements NotificationService {
         TimelineEventType eventType = event.getEventType();
         if (notifiesWatchers(eventType, event)) {
             for (Watcher watcher : watcherRepository.findByTripOrderByCreatedAtAsc(trip)) {
-                sendWatcherEmail(trip, watcher, subjectFor(eventType), bodyFor(trip, event));
+                sendWatcherEmail(
+                        trip,
+                        watcher,
+                        subjectFor(eventType),
+                        headingFor(eventType),
+                        bodyFor(trip, event),
+                        statusLabel(eventType),
+                        event);
             }
         }
         if (notifiesPrincipals(eventType)) {
             for (TripPrincipal principal : tripPrincipalRepository.findByTripOrderBySequenceNumberAsc(trip)) {
-                sendPrincipalEmail(trip, principal, subjectFor(eventType), bodyFor(trip, event));
+                sendPrincipalEmail(
+                        trip,
+                        principal,
+                        subjectFor(eventType),
+                        headingFor(eventType),
+                        bodyFor(trip, event),
+                        statusLabel(eventType),
+                        event);
             }
         }
     }
@@ -111,17 +139,34 @@ public class EmailTripNotificationService implements NotificationService {
         };
     }
 
-    private void sendWatcherEmail(Trip trip, Watcher watcher, String subject, String body) {
+    private void sendWatcherEmail(
+            Trip trip,
+            Watcher watcher,
+            String subject,
+            String heading,
+            String body,
+            String statusLabel,
+            TimelineEvent event) {
         sendEmail(
                 trip,
                 RecipientType.WATCHER,
                 watcher.getId(),
                 watcher.getEmail(),
                 subject,
-                body);
+                heading,
+                body,
+                statusLabel,
+                event);
     }
 
-    private void sendPrincipalEmail(Trip trip, TripPrincipal principal, String subject, String body) {
+    private void sendPrincipalEmail(
+            Trip trip,
+            TripPrincipal principal,
+            String subject,
+            String heading,
+            String body,
+            String statusLabel,
+            TimelineEvent event) {
         String email = Optional.ofNullable(principal.getUserAccount())
                 .map(user -> user.getEmail())
                 .orElse(null);
@@ -131,7 +176,10 @@ public class EmailTripNotificationService implements NotificationService {
                 principal.getId(),
                 email,
                 subject,
-                body);
+                heading,
+                body,
+                statusLabel,
+                event);
     }
 
     private void sendEmail(
@@ -140,7 +188,10 @@ public class EmailTripNotificationService implements NotificationService {
             java.util.UUID recipientId,
             String recipientEmail,
             String subject,
-            String body) {
+            String heading,
+            String body,
+            String statusLabel,
+            TimelineEvent event) {
         NotificationAttempt attempt = new NotificationAttempt(
                 trip,
                 recipientType,
@@ -156,11 +207,22 @@ public class EmailTripNotificationService implements NotificationService {
         }
 
         try {
+            String html = templateRenderer.render("email-templates/trip-update.html", Map.of(
+                    "title", subject,
+                    "heading", heading,
+                    "intro", body,
+                    "flightNumber", trip.getFlightNumber(),
+                    "arrivalAirport", trip.getArrivalAirport(),
+                    "statusLabel", defaultText(statusLabel, "Trip update"),
+                    "checkpoint", event != null ? defaultText(event.getCheckpointName(), "Not applicable") : "Not applicable",
+                    "note", event != null ? defaultText(event.getNote(), "No operational note supplied.") : "No operational note supplied.",
+                    "meetingPoint", defaultText(trip.getMeetingPoint(), "Not set"),
+                    "tripUrl", appBaseUrl));
             emailSender.send(new EmailMessage(
                     recipientEmail.trim(),
                     fromAddress,
                     subject,
-                    htmlBody(body),
+                    html,
                     body));
             attempt.setStatus(NotificationStatus.SENT);
             attempt.setSentAt(Instant.now());
@@ -184,9 +246,36 @@ public class EmailTripNotificationService implements NotificationService {
         };
     }
 
+    private String headingFor(TimelineEventType eventType) {
+        return switch (eventType) {
+            case CONCIERGE_IN_POSITION -> "Your concierge is in position";
+            case FLIGHT_LANDED -> "Flight landed";
+            case CLIENT_MET -> "Client met";
+            case CHECKPOINT_STARTED -> "Checkpoint started";
+            case CHECKPOINT_COMPLETED -> "Checkpoint completed";
+            case HANDOVER_COMPLETED -> "Handover completed";
+            case TRIP_COMPLETED -> "Trip completed";
+            default -> "Trip update";
+        };
+    }
+
+    private String statusLabel(TimelineEventType eventType) {
+        return switch (eventType) {
+            case CONCIERGE_IN_POSITION -> "Concierge in position";
+            case FLIGHT_LANDED -> "Flight landed";
+            case CLIENT_MET -> "Client met";
+            case CHECKPOINT_STARTED -> "Checkpoint started";
+            case CHECKPOINT_COMPLETED -> "Checkpoint completed";
+            case HANDOVER_COMPLETED -> "Handover completed";
+            case TRIP_COMPLETED -> "Trip completed";
+            case TRIP_CANCELLED -> "Trip cancelled";
+            default -> "Trip update";
+        };
+    }
+
     private String bodyFor(Trip trip, TimelineEvent event) {
         List<String> lines = new java.util.ArrayList<>();
-        lines.add("Trip " + trip.getFlightNumber() + " is now " + event.getEventType().name() + ".");
+        lines.add("Trip " + trip.getFlightNumber() + " is now " + statusLabel(event.getEventType()) + ".");
         if (hasText(event.getCheckpointName())) {
             lines.add("Checkpoint: " + event.getCheckpointName());
         }
@@ -194,13 +283,6 @@ public class EmailTripNotificationService implements NotificationService {
             lines.add("Note: " + event.getNote());
         }
         return String.join("\n", lines);
-    }
-
-    private String htmlBody(String body) {
-        return "<p>" + body.replace("&", "&amp;")
-                .replace("<", "&lt;")
-                .replace(">", "&gt;")
-                .replace("\n", "<br>") + "</p>";
     }
 
     private String truncate(String value) {
@@ -216,5 +298,16 @@ public class EmailTripNotificationService implements NotificationService {
 
     private boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private String defaultText(String value, String fallback) {
+        return hasText(value) ? value.trim() : fallback;
+    }
+
+    private String stripTrailingSlash(String value) {
+        if (value.endsWith("/")) {
+            return value.substring(0, value.length() - 1);
+        }
+        return value;
     }
 }
