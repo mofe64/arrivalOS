@@ -1,0 +1,15 @@
+package com.arrivalos.domain.model;
+
+public enum TimelineEventType {
+    TRIP_CREATED,
+    FLIGHT_APPROACHING,
+    CONCIERGE_IN_POSITION,
+    FLIGHT_LANDED,
+    CLIENT_MET,
+    CHECKPOINT_STARTED,
+    CHECKPOINT_COMPLETED,
+    TERMINAL_EXITED,
+    HANDOVER_COMPLETED,
+    TRIP_COMPLETED,
+    TRIP_CANCELLED
+}

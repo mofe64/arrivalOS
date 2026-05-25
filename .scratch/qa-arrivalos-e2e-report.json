@@ -1,0 +1,425 @@
+{
+  "environment": {
+    "api": "http://localhost:8080/api",
+    "maildev": "http://localhost:1080",
+    "frontend": "http://localhost:3001",
+    "stamp": "20260525140523"
+  },
+  "testData": {
+    "primaryAdminEmail": "primary.admin.20260525140523@qa.arrivalos.local",
+    "primaryAdminUserId": "c0e79d8b-fc5e-4976-af2e-b6e6cc622f0a",
+    "invitedAdminEmail": "invited.admin.20260525140523@qa.arrivalos.local",
+    "principalEmail": "principal.one.20260525140523@qa.arrivalos.local",
+    "principalUserId": "7ecd2acf-42a3-486d-9a44-12d9583c87b7",
+    "unrelatedPrincipalEmail": "principal.two.20260525140523@qa.arrivalos.local",
+    "unrelatedPrincipalUserId": "b7c1f73b-a2cd-4a11-9a6b-7214bcf5331c",
+    "tripId": "e1d392db-6f8b-4148-a66c-2a80658a82f1",
+    "conciergeAPublicId": "qa-concierge-a-20260525140523",
+    "conciergeBPublicId": "qa-concierge-b-20260525140523",
+    "conciergeAccessUrlA": "http://localhost:3001/concierge/trips/e1d392db-6f8b-4148-a66c-2a80658a82f1?token=-7MvAw5_zCcmNMlO5kCrg-ABn7z3DcO5T-AEFHi1lvo",
+    "conciergeAccessUrlB": "http://localhost:3001/concierge/trips/e1d392db-6f8b-4148-a66c-2a80658a82f1?token=Z5q135wxihKBMWSH5_Sxv4rR7_-ogQrDBG6ghQqLObY",
+    "allEmailsCreated": {
+      "watcher1": "watcher.created.20260525140523@qa.arrivalos.local",
+      "adminWatcher": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "principalWatcher": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "unverifiedEmail": "unverified.20260525140523@qa.arrivalos.local"
+    }
+  },
+  "passes": [
+    {
+      "title": "backend health",
+      "detail": "{\"service\":\"arrivalOs\",\"status\":\"ok\"}"
+    },
+    {
+      "title": "unverified admin login blocked",
+      "detail": "403 Email verification required"
+    },
+    {
+      "title": "admin creation and verification",
+      "detail": "primary.admin.20260525140523@qa.arrivalos.local"
+    },
+    {
+      "title": "GET /auth/me returns current admin",
+      "detail": "c0e79d8b-fc5e-4976-af2e-b6e6cc622f0a"
+    },
+    {
+      "title": "logout invalidates access token",
+      "detail": "GET /auth/me returned 401"
+    },
+    {
+      "title": "admin invitation acceptance",
+      "detail": "invited.admin.20260525140523@qa.arrivalos.local"
+    },
+    {
+      "title": "invited admin can access admin routes",
+      "detail": ""
+    },
+    {
+      "title": "duplicate invitation rejected",
+      "detail": "invited.admin.20260525140523@qa.arrivalos.local"
+    },
+    {
+      "title": "principal invitation acceptance and login",
+      "detail": "principal.one.20260525140523@qa.arrivalos.local"
+    },
+    {
+      "title": "principal cannot create admin invitations",
+      "detail": "blocked with 403"
+    },
+    {
+      "title": "accepted principal visible to admin",
+      "detail": ""
+    },
+    {
+      "title": "admin-created trip succeeds",
+      "detail": "e1d392db-6f8b-4148-a66c-2a80658a82f1"
+    },
+    {
+      "title": "admin trip detail contains principals, watchers, timeline, checkpoints",
+      "detail": ""
+    },
+    {
+      "title": "linked principal sees trip",
+      "detail": ""
+    },
+    {
+      "title": "unrelated principal cannot view trip",
+      "detail": "blocked with 403"
+    },
+    {
+      "title": "principal cannot access admin trip list",
+      "detail": "blocked with 403"
+    },
+    {
+      "title": "admin can update trip fields",
+      "detail": ""
+    },
+    {
+      "title": "admin can add another principal",
+      "detail": ""
+    },
+    {
+      "title": "admin can add another watcher",
+      "detail": ""
+    },
+    {
+      "title": "duplicate watcher on same trip rejected",
+      "detail": ""
+    },
+    {
+      "title": "assigned principal can add watcher",
+      "detail": ""
+    },
+    {
+      "title": "watcher is not login-capable",
+      "detail": ""
+    },
+    {
+      "title": "unassigned principal cannot add watchers",
+      "detail": "blocked with 403"
+    },
+    {
+      "title": "admin can create concierges",
+      "detail": ""
+    },
+    {
+      "title": "concierge list/detail/update work",
+      "detail": ""
+    },
+    {
+      "title": "duplicate concierge publicId rejected",
+      "detail": ""
+    },
+    {
+      "title": "inactive concierge cannot be assigned",
+      "detail": ""
+    },
+    {
+      "title": "assigned concierge access link generated",
+      "detail": "http://localhost:3001/concierge/trips/e1d392db-6f8b-4148-a66c-2a80658a82f1?token=-7MvAw5_zCcmNMlO5kCrg-ABn7z3DcO5T-AEFHi1lvo"
+    },
+    {
+      "title": "concierge view omits admin-only notification attempts",
+      "detail": ""
+    },
+    {
+      "title": "unassigned concierge cannot receive access link",
+      "detail": ""
+    },
+    {
+      "title": "old concierge token blocked after reassignment",
+      "detail": ""
+    },
+    {
+      "title": "past access-link expiry rejected",
+      "detail": ""
+    },
+    {
+      "title": "idempotent duplicate status update does not create new timeline event",
+      "detail": ""
+    },
+    {
+      "title": "invalid status transition rejected",
+      "detail": ""
+    },
+    {
+      "title": "concierge can complete trip through valid workflow",
+      "detail": ""
+    },
+    {
+      "title": "completed trip revokes concierge capability link",
+      "detail": ""
+    },
+    {
+      "title": "notification attempts persisted with expected shape",
+      "detail": "33 attempts"
+    },
+    {
+      "title": "email delivered: ArrivalOS trip created",
+      "detail": "1 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS watcher access added",
+      "detail": "2 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS concierge in position",
+      "detail": "5 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS flight landed",
+      "detail": "3 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS client met",
+      "detail": "3 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS checkpoint started",
+      "detail": "6 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS checkpoint completed",
+      "detail": "3 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS handover completed",
+      "detail": "5 messages"
+    },
+    {
+      "title": "email delivered: ArrivalOS trip completed",
+      "detail": "5 messages"
+    },
+    {
+      "title": "invalid enum returns client error",
+      "detail": ""
+    },
+    {
+      "title": "concierge access token is required",
+      "detail": ""
+    }
+  ],
+  "failures": [
+    {
+      "title": "invalid UUID does not return 400",
+      "severity": "P3 minor",
+      "detail": "got 401",
+      "evidence": {
+        "status": 401,
+        "data": null,
+        "url": "http://localhost:8080/api/admin/trips/not-a-uuid"
+      }
+    }
+  ],
+  "productGaps": [
+    {
+      "title": "principal-created trip is not implemented",
+      "detail": "POST /api/principal/trips returned 401",
+      "evidence": {}
+    },
+    {
+      "title": "true concierge delete/remove endpoint missing",
+      "detail": "DELETE returned 401; deactivate is the available removal model",
+      "evidence": {}
+    },
+    {
+      "title": "admin/ops status-update email notifications are missing",
+      "detail": "No OPS/ADMIN notification attempts were persisted for trip status updates",
+      "evidence": {}
+    }
+  ],
+  "emailEvidence": [
+    {
+      "subject": "ArrivalOS trip created",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "CNvJKdXL"
+    },
+    {
+      "subject": "ArrivalOS watcher access added",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "x9WAXrJe"
+    },
+    {
+      "subject": "ArrivalOS watcher access added",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "QWHNWPZw"
+    },
+    {
+      "subject": "ArrivalOS concierge in position",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "LMuDVloD"
+    },
+    {
+      "subject": "ArrivalOS concierge in position",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "KoJi4UnG"
+    },
+    {
+      "subject": "ArrivalOS concierge in position",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "aK0gYk5p"
+    },
+    {
+      "subject": "ArrivalOS concierge in position",
+      "to": "principal.one.20260525140523@qa.arrivalos.local",
+      "id": "MNT3oOKc"
+    },
+    {
+      "subject": "ArrivalOS concierge in position",
+      "to": "principal.two.20260525140523@qa.arrivalos.local",
+      "id": "4HK7QZjm"
+    },
+    {
+      "subject": "ArrivalOS flight landed",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "Gmu3bmQj"
+    },
+    {
+      "subject": "ArrivalOS flight landed",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "CgjIteFu"
+    },
+    {
+      "subject": "ArrivalOS flight landed",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "QqbAsZQb"
+    },
+    {
+      "subject": "ArrivalOS client met",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "SAkKMhjF"
+    },
+    {
+      "subject": "ArrivalOS client met",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "WJET7WG8"
+    },
+    {
+      "subject": "ArrivalOS client met",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "mcZnpKG0"
+    },
+    {
+      "subject": "ArrivalOS checkpoint started",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "laWF6X2z"
+    },
+    {
+      "subject": "ArrivalOS checkpoint started",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "yyN8r9cC"
+    },
+    {
+      "subject": "ArrivalOS checkpoint started",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "TDyrCFRx"
+    },
+    {
+      "subject": "ArrivalOS checkpoint started",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "9KsvTPSM"
+    },
+    {
+      "subject": "ArrivalOS checkpoint started",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "W6c4MLsx"
+    },
+    {
+      "subject": "ArrivalOS checkpoint started",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "6xu923tD"
+    },
+    {
+      "subject": "ArrivalOS checkpoint completed",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "bRuI2bu8"
+    },
+    {
+      "subject": "ArrivalOS checkpoint completed",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "5cERP4D7"
+    },
+    {
+      "subject": "ArrivalOS checkpoint completed",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "VFc07rvw"
+    },
+    {
+      "subject": "ArrivalOS handover completed",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "11qGbSHl"
+    },
+    {
+      "subject": "ArrivalOS handover completed",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "5bc76uXd"
+    },
+    {
+      "subject": "ArrivalOS handover completed",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "8EMPD47j"
+    },
+    {
+      "subject": "ArrivalOS handover completed",
+      "to": "principal.one.20260525140523@qa.arrivalos.local",
+      "id": "OT5Ui7Cy"
+    },
+    {
+      "subject": "ArrivalOS handover completed",
+      "to": "principal.two.20260525140523@qa.arrivalos.local",
+      "id": "jbK5OExr"
+    },
+    {
+      "subject": "ArrivalOS trip completed",
+      "to": "watcher.created.20260525140523@qa.arrivalos.local",
+      "id": "AsgoWE07"
+    },
+    {
+      "subject": "ArrivalOS trip completed",
+      "to": "watcher.admin.added.20260525140523@qa.arrivalos.local",
+      "id": "BCd25SPv"
+    },
+    {
+      "subject": "ArrivalOS trip completed",
+      "to": "watcher.principal.added.20260525140523@qa.arrivalos.local",
+      "id": "5XGfbU24"
+    },
+    {
+      "subject": "ArrivalOS trip completed",
+      "to": "principal.one.20260525140523@qa.arrivalos.local",
+      "id": "ajWNNZWp"
+    },
+    {
+      "subject": "ArrivalOS trip completed",
+      "to": "principal.two.20260525140523@qa.arrivalos.local",
+      "id": "5nv3WRhL"
+    }
+  ],
+  "apiResponses": {
+    "health": {
+      "service": "arrivalOs",
+      "status": "ok"
+    },
+    "notificationAttemptsCount": 33
+  }
+}

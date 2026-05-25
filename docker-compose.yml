@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: arrivalos-postgres
+    environment:
+      POSTGRES_DB: arrivalos
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - arrivalos-postgres-data:/var/lib/postgresql/data
+
+  maildev:
+    image: maildev/maildev:2.1.0
+    container_name: arrivalos-maildev
+    ports:
+      - "1025:1025"
+      - "1080:1080"
+
+volumes:
+  arrivalos-postgres-data:
